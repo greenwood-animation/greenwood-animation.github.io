@@ -166,6 +166,7 @@
           document.body.appendChild(imeInput);
 
           var isComposing = false;
+          var sendTimer = null;
 
           canvas.addEventListener('click', function() {
             imeInput.focus();
@@ -178,19 +179,36 @@
 
           imeInput.addEventListener('compositionend', function() {
             isComposing = false;
-            unityInstance.SendMessage('IMEBridge', 'OnInputChanged', imeInput.value);
+            // 조합 완전히 끝난 후 딜레이 두고 전송
+            clearTimeout(sendTimer);
+            sendTimer = setTimeout(function() {
+              unityInstance.SendMessage('IMEBridge', 'OnInputChanged', imeInput.value);
+            }, 50);
           });
 
           imeInput.addEventListener('input', function() {
             if (!isComposing) {
-              unityInstance.SendMessage('IMEBridge', 'OnInputChanged', imeInput.value);
+              clearTimeout(sendTimer);
+              sendTimer = setTimeout(function() {
+                unityInstance.SendMessage('IMEBridge', 'OnInputChanged', imeInput.value);
+              }, 50);
             }
           });
 
           imeInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-              unityInstance.SendMessage('IMEBridge', 'OnInputEnd', imeInput.value);
-              imeInput.value = '';
+              clearTimeout(sendTimer);
+              setTimeout(function() {
+                unityInstance.SendMessage('IMEBridge', 'OnInputEnd', imeInput.value);
+                imeInput.value = '';
+              }, 50);
+            }
+            // 백스페이스 처리
+            if (e.key === 'Backspace' && !isComposing) {
+              clearTimeout(sendTimer);
+              sendTimer = setTimeout(function() {
+                unityInstance.SendMessage('IMEBridge', 'OnInputChanged', imeInput.value);
+              }, 50);
             }
           });
 
