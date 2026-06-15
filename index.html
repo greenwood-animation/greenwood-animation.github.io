@@ -165,16 +165,28 @@
           imeInput.style.cssText = 'position:fixed;opacity:0;top:0;left:0;width:1px;height:1px;z-index:9999;font-size:16px;';
           document.body.appendChild(imeInput);
 
-          // canvas 클릭시 hidden input으로 포커스
+          var isComposing = false;
+
           canvas.addEventListener('click', function() {
             imeInput.focus();
             imeInput.value = '';
           });
 
-          // 입력값 Unity로 전달
-          imeInput.addEventListener('input', function() {
+          imeInput.addEventListener('compositionstart', function() {
+            isComposing = true;
+          });
+
+          imeInput.addEventListener('compositionend', function() {
+            isComposing = false;
             unityInstance.SendMessage('IMEBridge', 'OnInputChanged', imeInput.value);
           });
+
+          imeInput.addEventListener('input', function() {
+            if (!isComposing) {
+              unityInstance.SendMessage('IMEBridge', 'OnInputChanged', imeInput.value);
+            }
+          });
+
           imeInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
               unityInstance.SendMessage('IMEBridge', 'OnInputEnd', imeInput.value);
