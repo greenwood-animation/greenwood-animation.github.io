@@ -64,21 +64,6 @@
         font-family: sans-serif;
       }
       #rotate-hint .icon { font-size: 52px; }
-
-      #browser-input-overlay {
-        position: fixed;
-        z-index: 1000;
-        background: transparent;
-        border: none;
-        outline: none;
-        color: white;
-        font-size: 20px;
-        font-family: 'KoPub Batang', serif;
-        text-align: center;
-        padding: 0;
-        display: none;
-        caret-color: white;
-      }
     </style>
   </head>
   <body>
@@ -102,9 +87,6 @@
       </div>
     </div>
 
-    <!-- 브라우저 input 오버레이 -->
-    <input id="browser-input-overlay" type="text" autocomplete="off" />
-
     <script>
       var canvas    = document.querySelector("#unity-canvas");
       var container = document.querySelector("#unity-container");
@@ -113,36 +95,16 @@
       var BASE_W = 1920;
       var BASE_H = 1080;
 
-      // Unity RectTransform 기준값 (1920x1080)
-      var INPUT_W = 1250;
-      var INPUT_H = 50;
-      var INPUT_X = (BASE_W - INPUT_W) / 2; // 335
-      var INPUT_Y = (BASE_H - INPUT_H) / 2; // 515 (Unity Y=0 = 화면 중앙)
-
-      var overlayInput = document.getElementById('browser-input-overlay');
-
       function resize() {
         var W = window.innerWidth;
         var H = window.innerHeight;
         var scale = Math.min(W / BASE_W, H / BASE_H);
         var displayW = Math.round(BASE_W * scale);
         var displayH = Math.round(BASE_H * scale);
-
         canvas.style.width  = displayW + "px";
         canvas.style.height = displayH + "px";
         container.style.width  = displayW + "px";
         container.style.height = displayH + "px";
-
-        // canvas 화면상 실제 위치
-        var canvasLeft = (W - displayW) / 2;
-        var canvasTop  = (H - displayH) / 2;
-
-        // overlay input 위치 계산
-        overlayInput.style.left   = (canvasLeft + INPUT_X * scale) + "px";
-        overlayInput.style.top    = (canvasTop  + INPUT_Y * scale) + "px";
-        overlayInput.style.width  = (INPUT_W * scale) + "px";
-        overlayInput.style.height = (INPUT_H * scale) + "px";
-        overlayInput.style.fontSize = (20 * scale) + "px";
       }
       resize();
       window.addEventListener('resize', resize);
@@ -195,44 +157,6 @@
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
         }).then((unityInstance) => {
           document.querySelector("#unity-loading-bar").style.display = "none";
-
-          // Unity에서 호출: 입력창 열기
-          window.ShowInputField = function() {
-            overlayInput.style.display = 'block';
-            overlayInput.value = '';
-            overlayInput.focus();
-          };
-
-          // Unity에서 호출: 입력창 닫기
-          window.HideInputField = function() {
-            overlayInput.style.display = 'none';
-            overlayInput.blur();
-          };
-
-          // 입력값 실시간 Unity로 전달
-          var isComposing = false;
-
-          overlayInput.addEventListener('compositionstart', function() {
-            isComposing = true;
-          });
-
-          overlayInput.addEventListener('compositionend', function() {
-            isComposing = false;
-            unityInstance.SendMessage('IMEBridge', 'OnInputChanged', overlayInput.value);
-          });
-
-          overlayInput.addEventListener('input', function() {
-            if (!isComposing) {
-              unityInstance.SendMessage('IMEBridge', 'OnInputChanged', overlayInput.value);
-            }
-          });
-
-          overlayInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-              unityInstance.SendMessage('IMEBridge', 'OnInputEnd', overlayInput.value);
-              window.HideInputField();
-            }
-          });
 
           document.querySelector("#unity-fullscreen-button").onclick = () => {
             if (isMobile) {
